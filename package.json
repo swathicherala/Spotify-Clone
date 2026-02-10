@@ -1,0 +1,26 @@
+{
+  "name": "spotify-clone-api",
+  "version": "1.0.0",
+  "description": "Spotify clone using nodejs expressjs and mongodb",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swathicherala/Spotify-Clone.git"
+  },
+  "keywords": [],
+  "author": "SwathiCherala",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/swathicherala/Spotify-Clone/issues"
+  },
+  "homepage": "https://github.com/swathicherala/Spotify-Clone#readme",
+  "dependencies": {
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "mongoose": "^9.2.0"
+  }
+}
