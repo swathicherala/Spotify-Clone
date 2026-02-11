@@ -1,6 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const userRouter = require('./src/routes/userRoutes')
+const artistRouter = require('./src/routes/artistRoutes')
 const dotenv = require('dotenv')
 const { StatusCodes } = require('http-status-codes')
 //Load environment variables
@@ -20,6 +21,7 @@ mongoose.connect(process.env.MONGO_URL)
 app.use(express.json())
 //Routes
 app.use('/api/users', userRouter)
+app.use('/api/artists', artistRouter)
 
 //Error handling Middleware
 app.use((req,res,next)=>{
