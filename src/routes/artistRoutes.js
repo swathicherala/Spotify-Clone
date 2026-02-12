@@ -1,15 +1,18 @@
 const express = require('express')
-const {createArtist} = require('../controllers/artistController')
+const {createArtist, getArtists, getArtistsById, updateArtist, deleteArtist, getTopArtists, getArtistTopSongs} = require('../controllers/artistController')
 const upload = require('../middlewares/upload')
 const {protect, isAdmin} = require('../middlewares/auth')
 const artistRouter = express.Router()
 
 //Public routes
-// artistRouter.post('/register', createArtist)
-// artistRouter.post('/login', loginUser)
+artistRouter.get('/', getArtists)
+artistRouter.get('/top', getTopArtists)
+artistRouter.get('/:id/top-songs', getArtistTopSongs)
+artistRouter.get('/:id', getArtistsById)
 
 //Admin
 artistRouter.post('/', protect, isAdmin, upload.single('image'), createArtist)
-// userRouter.put('/profile', protect, upload.single('profilePicture'), updateUserProfile)
+artistRouter.put('/:id', protect, isAdmin, upload.single('image'), updateArtist)
+artistRouter.delete('/:id', protect, isAdmin, deleteArtist)
 
 module.exports = artistRouter
