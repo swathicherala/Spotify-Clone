@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref:"Artist"
     }],
-    followedPlayedLists: [{
+    followedPlayLists: [{
         type: mongoose.Schema.Types.ObjectId,
         ref:"Playlist"
     }]

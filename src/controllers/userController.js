@@ -1,6 +1,9 @@
 const asyncHandler = require('express-async-handler')
 const {StatusCodes} = require('http-status-codes')
 const User = require('../models/User')
+const Song = require('../models/Song')
+const Artist = require('../models/Artist')
+const Playlist = require('../models/Playlist')
 const uploadToCloudinary = require('../utils/cloudinaryUpload')
 const generateToken = require('../utils/generateToken')
 
@@ -32,8 +35,8 @@ const registerUser = asyncHandler(async(req,res)=>{
 })
 
 //@desc - Login a new user
-//@route - POST /api/users/login
-//@Access - Public
+//@route - GET /api/users/login
+//@Access - Private
 const loginUser = asyncHandler(async(req,res)=>{
     const {email, password} = req.body
     //Find user
@@ -53,10 +56,16 @@ const loginUser = asyncHandler(async(req,res)=>{
     }
 })
 
-// Get User Profile
+//@desc - Get user profile
+//@route - POST /api/users/login
+//@Access - Public
 const getUserProfile = asyncHandler(async (req,res)=>{
     //Find the User
     const user = await User.findById(req.user._id).select("-password")
+    .populate('likedSongs', 'title artist duration')
+    .populate('likedAlbums', 'title artist coverImage')
+    .populate('followedArtists', 'name image')
+    .populate('followedPlayLists', 'name creator coverImage')
     if(user){
         res.status(StatusCodes.OK).json(user)
     }else{
@@ -64,7 +73,11 @@ const getUserProfile = asyncHandler(async (req,res)=>{
         throw new Error('User Not Found')
     }
 })
+
 // updateUserProfile
+//@desc - Login a new user
+//@route - PUT /api/users/profile
+//@Access - Private
 const updateUserProfile = asyncHandler(async (req,res)=>{
     const user = await User.findById(req.user._id)
     const {name,email, password} = req.body
@@ -95,12 +108,124 @@ const updateUserProfile = asyncHandler(async (req,res)=>{
     }
     
 })
-//! toggleLikeSong
-const toggleLikeSong = asyncHandler(async (req,res)=>{})
-//! toggleFollowArtist
-const toggleFollowArtist = asyncHandler(async (req,res)=>{})
-//! toggleFollowPlaylist
-const toggleFollowPlaylist = asyncHandler(async (req,res)=>{})
+
+// toggleLikeSong
+//@desc - Like/unlike a song
+//@route - PUT /api/users/like-song/:id
+//@Access - Private
+const toggleLikeSong = asyncHandler(async (req,res)=>{
+    const songId = req.params.id
+    const user = await User.findById(req.user._id)
+    if(!user){
+        res.status(StatusCode.NOT_FOUND)
+        throw new Error("User not found ")
+    }
+    const song = await Song.findById(songId)
+    if(!song){
+        res.status(StatusCodes.NOT_FOUND)
+        throw new Error("Song not found ")
+    }
+    //Check if song is already liked
+    const songIndex = user.likedSongs.indexOf(songId)
+    if(songIndex === -1){
+        //Add song to liked songs
+        user.likedSongs.push(songId)
+
+        //Increase the song likes count
+        song.likes += 1
+        await song.save()
+    }else{
+        //Remove songs from liked songs
+        user.likedSongs.splice(songIndex, 1)
+        //Decrement song's like count (ensure it doesn't go below 0)
+        if(song.likes > 0){
+            song.likes -= 1
+        }
+    }
+    await Promise.all([user.save(), song.save()]) // Save both user and song together
+    res.status(StatusCodes.OK).json({
+        likedSongs: user.likedSongs,
+        message: songIndex === -1 ? "Song added to liked songs" : "Song removed from liked songs"
+    })
+})
+
+// toggleFollowArtist
+//@desc - Follow/unfollow an artist
+//@route - PUT /api/users/follow-artist/:id
+//@Access - Private
+const toggleFollowArtist = asyncHandler(async (req,res)=>{
+    const artistId = req.params.id
+    const user = await User.findById(req.user._id)
+    if(!user){
+        res.status(StatusCodes.NOT_FOUND)
+        throw new Error("User not found")
+    }
+
+    //Find the artist
+    const artist = await Artist.findById(artistId)
+    if(!artist){
+        res.status(StatusCodes.NOT_FOUND)
+        throw new Error("Artist not found")
+    }
+
+    //Check if artist is already followed
+    const artistIndex = user.followedArtists.indexOf(artistId)
+    if(artistIndex === -1){
+        user.followedArtists.push(artistId)
+        artist.followers += 1
+    }else{
+        //Remove artist to followed artist
+        user.followedArtists.splice(artistIndex, 1)
+        //Decrement followers like count (ensure it doesn't go below 0)
+        if(artist.followers > 0){
+            artist.followers -= 1
+        }
+    }
+    await Promise.all([user.save(), artist.save()])
+    res.status(StatusCodes.OK).json({
+        followedArtist: user.followedArtists,
+        message: artistIndex === -1 ? "Artist followed" : "Artist unfollowed"
+    })
+})
+
+//  toggleFollowPlaylist
+//@desc - Like/unlike a song
+//@route - PUT /api/users/like-song/:id
+//@Access - Private
+const toggleFollowPlaylist = asyncHandler(async (req,res)=>{
+    const playlistId = req.params.id
+    const user = await User.findById(req.user._id)
+    if(!user){
+        res.status(StatusCodes.NOT_FOUND)
+        throw new Error("User not found")
+    }
+
+    //Find the playlist
+    const playlist = await Playlist.findById(playlistId)
+    if(!playlist){
+        res.status(StatusCodes.NOT_FOUND)
+        throw new Error("Playlist not found")
+    }
+
+    //Check if playlist is already followed
+    const playlistIndex = user.followedPlayLists.indexOf(playlistId)
+    if(playlistIndex === -1){
+        user.followedPlayLists.push(playlistId)
+        playlist.followers += 1
+    }else{
+        //Remove playlist to followed playlist
+        user.followedPlayLists.splice(playlistIndex, 1)
+        //Decrement followers like count (ensure it doesn't go below 0)
+        if(playlist.followers > 0){
+            playlist.followers -= 1
+        }
+    }
+    await Promise.all([user.save(), playlist.save()])
+    res.status(StatusCodes.OK).json({
+        followedPlayLists: user.followedPlayLists,
+        message: playlistIndex === -1 ? "Playlist followed" : "Playlist unfollowed"
+    })
+})
 //! getUser
 const getUser = asyncHandler(async (req,res)=>{})
 
@@ -108,5 +233,8 @@ module.exports = {
     registerUser,
     loginUser,
     getUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    toggleLikeSong,
+    toggleFollowArtist,
+    toggleFollowPlaylist
 }
